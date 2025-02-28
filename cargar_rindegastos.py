@@ -20,7 +20,7 @@ load_dotenv()
 # Database connection details
 server = os.getenv('DB_SERVER')
 database = os.getenv('DB_DATABASE')
-schema_name = os.getnenv('DB_SCHEMA')
+schema_name = os.getenv('DB_SCHEMA')
 username = os.getenv('DB_USERNAME')
 password = os.getenv('DB_PASSWORD')
 current_year = datetime.datetime.now().year-1

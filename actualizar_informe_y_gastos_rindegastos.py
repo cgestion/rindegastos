@@ -9,6 +9,7 @@ from sqlalchemy import create_engine
 from cargar_rindegastos import fetch_and_store_extrafields_data, fetch_and_store_sunatinfo_data, log_exceptions
 import json
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
@@ -120,21 +121,21 @@ def main(report_number):
     except Exception as e:
         print(f"An error occurred while fetching IDs: {e}")
     
-    token = os.getenv('API_TOKEN')
-    heaers = 
-    result = r.getExpenseReport(f"{report_id}")
-    response = result.read().decode('utf-8')
-    data = json.loads(response)
-
-    # Create the updated Report Dataframe
-    report_df = pd.DataFrame([data])
-
-    result = r.getExpenses({"ReportId": f"{report_id}"})
-    response = result.read().decode('utf-8')
-    data = json.loads(response)
-    records = data.get('Expenses', [])
+    # Use fetch_from_rindegastos to get the expense report data
+    report_data = fetch_from_rindegastos("getExpenseReport", params={"Id": report_id})
+    if report_data is None:
+        raise Exception("Failed to fetch expense report data")
         
-    # Create the updated Expenses Dataframe. Este nuevo df puede ser que traiga menos gastos ya que alguno se pudo haber elimninado del informe.
+    # Create the Report DataFrame
+    report_df = pd.DataFrame([report_data])
+
+    # Use fetch_from_rindegastos to get expenses related to the report
+    expenses_data = fetch_from_rindegastos("getExpenses", params={"ReportId": report_id})
+    if expenses_data is None:
+        raise Exception("Failed to fetch expenses data")
+
+    # Extract expenses records and create the Expenses DataFrame
+    records = expenses_data.get('Expenses', [])
     expenses_df = pd.DataFrame(records)
 
     # Expenses ID list. Aquí nos aseguramos de eliminar todo lo relacionado al informe. Incluyendo aquello gastos que pudieron ser elimnados 
