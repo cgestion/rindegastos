@@ -460,6 +460,20 @@ def main():
     # Drop any duplicates 
     drop_any_duplacates()
     
+    # Add EXEC statement at the end
+    print("Executing stored procedure fil.sp_actualiza_reporte_rindegastos...")
+    try:
+        conn = get_database_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"EXEC fil.sp_actualiza_reporte_rindegastos")  # Replace with your actual stored procedure
+        conn.commit()
+    except Exception as e:
+        print(f"Error executing stored procedure: {e}")
+        conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()
+    
     end_time = time.time()
     execution_time = end_time - start_time
     print(f"Execution time: {execution_time} seconds")
