@@ -17,9 +17,12 @@ def check_api_availability():
         if response.status_code == 200:
             try:
                 response_data = response.json()
+
                 if "Error" in response_data:
                     raise APIAvailabilityException(f"API returned an error: {response_data['Error']}")
+                
                 return True
+    
             except ValueError:
                 raise APIAvailabilityException("API returned malformed JSON")
         else:
