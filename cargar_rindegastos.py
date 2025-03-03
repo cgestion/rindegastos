@@ -1,4 +1,4 @@
-﻿import time
+import time
 from api_utils import check_api_availability
 import json
 import pandas as pd

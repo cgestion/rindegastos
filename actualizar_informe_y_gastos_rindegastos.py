@@ -1,4 +1,4 @@
-﻿import sys
+import sys
 import pyodbc
 import requests 
 import pandas as pd
