@@ -206,7 +206,7 @@ def fetch_and_store_extrafields_data(extrafields_df, target_table, status="1"):
 
 MAX_RETRIES = 3
 RETRY_DELAY = 5  # in seconds
-LOG_FILE = "cargar_rindegastos_error_log.txt"  # Log file name
+LOG_FILE = "logs.txt"  # Log file name
 
 if not os.path.exists(LOG_FILE):
     with open(LOG_FILE, 'w') as f:
@@ -313,7 +313,7 @@ def fetch_and_store_data(endpoint, target_table, data_key, status="1"):
                 
     if retries == MAX_RETRIES:
         with open(LOG_FILE, 'a') as f:
-            f.write(f"Failed to fetch and store {data_key} with status {status} after {retries} retries\n")
+            f.write(f"{datetime.datetime.now()} - Error: Failed to fetch and store {data_key} with status {status} after {retries} retries\n")
             
 # Function to delete records from various tables
 def delete_rindegastos_gastos():
