@@ -8,7 +8,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 from dateutil.relativedelta import relativedelta
-from params import MONTHS_OFFSET, DAYS_OFFSET, YEARS_OFFSET
+from params import YEARS_OFFSET, MONTHS_OFFSET, DAYS_OFFSET
 
 
 start_time = time.time()
@@ -150,9 +150,9 @@ def consultar_estado(rowId, numRuc, codComp, numeroSerie, numero, fechaEmision, 
         retries += 1        
 
 reference_date = (datetime.datetime.now() -relativedelta(
+    years=YEARS_OFFSET,
     months=MONTHS_OFFSET,
     days=DAYS_OFFSET,
-    years=YEARS_OFFSET
 )).strftime("%Y-%m-%d")
 
 # Establish the database connection
