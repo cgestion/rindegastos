@@ -7,6 +7,7 @@ import pyodbc
 import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
+from dateutil.relativedelta import relativedelta
 
 start_time = time.time()
 
@@ -146,11 +147,15 @@ def consultar_estado(rowId, numRuc, codComp, numeroSerie, numero, fechaEmision, 
         time.sleep(1)
         retries += 1        
 
-# Extract the current year
-current_year = datetime.now().year-1
+months_offset = 12
+days_offset = 0
+years_offset = 0
 
-# Construct the date string 'current_year-01-01'
-filter_date = f"{current_year}-01-01"
+reference_date = (datetime.datetime.now() -relativedelta(
+    months=months_offset, 
+    days=days_offset, 
+    years=years_offset
+)).strftime("%Y-%m-%d")
 
 # Establish the database connection
 cnxn = pyodbc.connect(
@@ -188,7 +193,7 @@ LEFT JOIN
 ON
     a.id = b.Id
 WHERE
-    a.IssueDate >= '{filter_date}';
+    a.IssueDate >= '{reference_date}';
 """
 
 # Load data into a pandas DataFrame
@@ -242,7 +247,7 @@ engine = create_engine(connection_string)
 target_table = 'rindegastos_gastos_vcp'
 
 if not rinde_gastos_vcp_df.empty:
-    rinde_gastos_vcp_df.to_sql(target_table, engine, schema=schema_name, if_exists='replace', index=False)
+    rinde_gastos_vcp_df.to_sql(target_table, engine, schema=schema_name, if_exists='append', index=False)
 else:
     print("DataFrame is empty; table not replaced.")
 

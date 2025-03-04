@@ -24,11 +24,13 @@ database = os.getenv('DB_DATABASE')
 schema_name = os.getenv('DB_SCHEMA')
 username = os.getenv('DB_USERNAME')
 password = os.getenv('DB_PASSWORD')
+
 today = datetime.datetime.now().strftime("%Y-%m-%d")
 
 months_offset = 12
 days_offset = 0
 years_offset = 0
+
 reference_date = (datetime.datetime.now() -relativedelta(
     months=months_offset, 
     days=days_offset, 
