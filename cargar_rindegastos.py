@@ -1,4 +1,4 @@
-import time
+﻿import time
 from api_utils import check_api_availability
 import json
 import pandas as pd
@@ -14,6 +14,7 @@ from socket import timeout
 import os
 from sunatinfo_target_columns import sunatinfo_target_columns
 from dotenv import load_dotenv
+from dateutil.relativedelta import relativedelta
 
 load_dotenv()
 
@@ -23,8 +24,16 @@ database = os.getenv('DB_DATABASE')
 schema_name = os.getenv('DB_SCHEMA')
 username = os.getenv('DB_USERNAME')
 password = os.getenv('DB_PASSWORD')
-current_year = datetime.datetime.now().year-1
-current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+today = datetime.datetime.now().strftime("%Y-%m-%d")
+
+months_offset = 12
+days_offset = 0
+years_offset = 0
+reference_date = (datetime.datetime.now() -relativedelta(
+    months=months_offset, 
+    days=days_offset, 
+    years=years_offset
+)).strftime("%Y-%m-%d")
 
 # Function to establish the database connection
 def get_database_connection():
@@ -223,12 +232,12 @@ def fetch_and_store_data(endpoint, target_table, data_key, status="1"):
             
             if target_table == "rindegastos_informes":
                 if status == "1":
-                    params["Since"] = f"{current_year}-01-01"
+                    params["Since"] = f"{reference_date}"
                 else:
                     params["Status"] = status
             elif target_table == "rindegastos_gastos":
-                params["Since"] = f"{current_year}-01-01"
-                params["Until"] = f"{current_date}"
+                params["Since"] = f"{reference_date}"
+                params["Until"] = f"{today}"
                 params["Status"] = status
                 
             params["ResultsPerPage"] = "999"
@@ -317,12 +326,12 @@ def fetch_and_store_data(endpoint, target_table, data_key, status="1"):
             
 # Function to delete records from various tables
 def delete_rindegastos_gastos():
-    print('Deleting current year gastos')
+    print('Deleting gastos')
     conn = get_database_connection()
     cursor = conn.cursor()
 
     try:
-        cursor.execute(f"SELECT Id FROM ciclo_proveedores.fil.rindegastos_gastos WHERE IssueDate >= '{current_year}-01-01'")
+        cursor.execute(f"SELECT Id FROM ciclo_proveedores.fil.rindegastos_gastos WHERE IssueDate >= '{reference_date}'")
         ids = [row.Id for row in cursor.fetchall()]
 
         if ids:
@@ -331,7 +340,7 @@ def delete_rindegastos_gastos():
             cursor.execute(f"DELETE FROM ciclo_proveedores.fil.rindegastos_gastos WHERE Id IN ({','.join(map(str, ids))})")
             print("Deleted rindegastos_gastos records")
         else:
-            print(f"No records found in rindegastos_gastos where IssueDate >= {current_year}")
+            print(f"No records found in rindegastos_gastos where IssueDate >= {reference_date}")
 
         conn.commit()
 
@@ -343,12 +352,12 @@ def delete_rindegastos_gastos():
         conn.close()
         
 def delete_rindegastos_informes():    
-    print('Deleting current year informes')
+    print('Deleting informes')
     conn = get_database_connection()
     cursor = conn.cursor()
 
     try:
-        cursor.execute(f"SELECT Id FROM ciclo_proveedores.fil.rindegastos_informes WHERE SendDate >= '{current_year}-01-01'")
+        cursor.execute(f"SELECT Id FROM ciclo_proveedores.fil.rindegastos_informes WHERE SendDate >= '{reference_date}'")
         ids = [row.Id for row in cursor.fetchall()]
 
         if ids:
@@ -356,7 +365,7 @@ def delete_rindegastos_informes():
             cursor.execute(f"DELETE FROM ciclo_proveedores.fil.rindegastos_informes WHERE Id IN ({','.join(map(str, ids))})")
             print("Deleted rindegastos_informes records")
         else:
-            print(f"No records found in rindegastos_informes where SendDate >= {current_year}")
+            print(f"No records found in rindegastos_informes where SendDate >= {reference_date}")
 
         conn.commit()
 
