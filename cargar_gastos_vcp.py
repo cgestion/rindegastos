@@ -11,6 +11,7 @@ from dateutil.relativedelta import relativedelta
 from params import YEARS_OFFSET, MONTHS_OFFSET, DAYS_OFFSET
 import os
 from cargar_rindegastos import log_exceptions
+import requests.exceptions
 
 load_dotenv()
 
@@ -78,42 +79,53 @@ def consultar_estado(rowId, numRuc, codComp, numeroSerie, numero, fechaEmision, 
 
     max_retries = 3
     retries = 0
-
     while retries < max_retries:
-        print("--------------------------------------------------------------------------------------")
-        print(f"Processing rowId={rowId}, numRuc={numRuc}, codComp={codComp}, numeroSerie={numeroSerie}, numero={numero}, fechaEmision={fechaEmision}, monto={monto}")
-        response = requests.post(url, headers=headers, data=json.dumps(payload))
-        if response.status_code == 200:
-            # Successful request
-            response_data = response.json()
-            if response_data.get("data"):
-                try:
-                    estadoCp_text = estadoCp_decode[response_data["data"]["estadoCp"]]
-                    if estadoCp_text == "NO AUTORIZADO" or estadoCp_text == "NO EXISTE":
+        try:
+            print("--------------------------------------------------------------------------------------")
+            print(f"Processing rowId={rowId}, numRuc={numRuc}, codComp={codComp}, numeroSerie={numeroSerie}, numero={numero}, fechaEmision={fechaEmision}, monto={monto}") 
+            response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=10)
+            
+            if response.status_code == 200:
+                # Successful request
+                response_data = response.json()
+                if response_data.get("data"):
+                    try:
+                        estadoCp_text = estadoCp_decode[response_data["data"]["estadoCp"]]
+                        if estadoCp_text in ["NO AUTORIZADO", "NO EXISTE"]:
+                            print('Success')
+                            return estadoCp_text, np.nan, np.nan
+                        
+                        estadoRuc_text = estadoRuc_decode[response_data["data"]["estadoRuc"]]
+                        condDomiRuc_text = condDomiRuc_decode[response_data["data"]["condDomiRuc"]]
                         print('Success')
-                        return estadoCp_text, np.nan, np.nan
-                    estadoRuc_text = estadoRuc_decode[response_data["data"]["estadoRuc"]]
-                    condDomiRuc_text = condDomiRuc_decode[response_data["data"]["condDomiRuc"]]
-                    print('Success')
-                    return estadoCp_text, estadoRuc_text, condDomiRuc_text
-                except KeyError as e:
-                    print(response.text)
-                    error_message = f"Error: Missing key in response data: {e}"
-                    print(error_message)
-            else:
-                print(response.text)
-        else:
-            try:
-                error_message = response.json().get("message", "Error: Sunat API could not retrieve the data")
-                if error_message == "Error: Sunat API could not retrieve the data":
-                    print(response.text)
+                        return estadoCp_text, estadoRuc_text, condDomiRuc_text
+                    except KeyError as e:
+                        print(response.text)
+                        print(f"Error: Missing key in response data: {e}")
                 else:
-                    print("API warning: ", error_message)
-                if error_message == "En comprobantes físicos, el campo 'monto' no debe registrar información":
-                    payload['monto'] = ''
-            except TypeError:
-                error_message = response.text
-                print(error_message)
+                    print(response.text)
+            else:
+                try:
+                    error_message = response.json().get("message", "Error: Sunat API could not retrieve the data")
+                    if error_message == "Error: Sunat API could not retrieve the data":
+                        print(response.text)
+                    else:
+                        print("API warning: ", error_message)
+                    if error_message == "En comprobantes físicos, el campo 'monto' no debe registrar información":
+                        payload['monto'] = ''
+                except (TypeError, json.JSONDecodeError):
+                    print("Error: Unable to parse response text")
+                    print(response.text)
+
+        except requests.exceptions.Timeout:
+            print("Error: Request timed out. Retrying...")
+        except requests.exceptions.ConnectionError:
+            print("Error: Network problem (e.g., DNS failure, refused connection). Retrying...")
+        except requests.exceptions.HTTPError as e:
+            print(f"HTTP Error: {e}")
+        except requests.exceptions.RequestException as e:
+            print(f"Unexpected request error: {e}")
+
         print('Retrying ... ')
         time.sleep(1)
         retries += 1        
