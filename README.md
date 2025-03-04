@@ -1,4 +1,4 @@
-# Documentación de Scripts de Integración Rindegastos
+# Rindegastos
 
 Este repositorio contiene scripts desarrollados en Python para la integración de la API de Rindegastos con las bbdd. A continuación, se describen los tres scripts principales.
 
