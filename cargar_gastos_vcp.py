@@ -12,6 +12,13 @@ from params import YEARS_OFFSET, MONTHS_OFFSET, DAYS_OFFSET
 import os
 from cargar_rindegastos import log_exceptions
 
+# Database connection details
+server = os.getenv('DB_SERVER')
+database = os.getenv('DB_DATABASE')
+schema_name = os.getenv('DB_SCHEMA')
+username = os.getenv('DB_USERNAME')
+password = os.getenv('DB_PASSWORD')
+
 # Function to consult the status
 def consultar_estado(rowId, numRuc, codComp, numeroSerie, numero, fechaEmision, monto):
     # URL for integrated consultation service
@@ -123,13 +130,6 @@ def main():
     start_time = time.time()
 
     load_dotenv()
-
-    # Database connection details
-    server = os.getenv('DB_SERVER')
-    database = os.getenv('DB_DATABASE')
-    schema_name = os.getenv('DB_SCHEMA')
-    username = os.getenv('DB_USERNAME')
-    password = os.getenv('DB_PASSWORD')
 
     # Replace these values with your actual client_id and client_secret
     client_id = os.getenv('CLIENT_ID')
