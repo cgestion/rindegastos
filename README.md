@@ -97,9 +97,13 @@ Sustituye `<report_number>` por el número del informe a actualizar.
 
 ## 📝 Notas adicionales
 
-Si realizas cambios en el código, no olvides ejecutar el comand `git pull` en el servidor `new-highlife` para actualizar los cambios en producción. 
+- Si realizas cambios en el código, no olvides ejecutar el comand `git pull` en el servidor `new-highlife` para actualizar los cambios en producción.
 
-La ruta del proyecto en el servidor es `C:\Compartido\Carga\Reportes\Ciclo_Proveedores\rindegastos`.  
+- La ruta del proyecto en el servidor `new-highlife` es `C:\Compartido\Carga\Reportes\Ciclo_Proveedores\rindegastos`. 
+
+
+- Los scripts `cargar_rindegastos.py` y `cargar_gastos_vcp.py` se ejecutan diariamente a las 7:00 am en el servior `new-highlife` mediante la tarea la tarea **`Task Scheduler Library>Reportes>cargar_rindegastos`** que ejecuta el archivo bat `cargar_rindegastos.bat`. 
+ 
 
 ###### Última modificación del README: 04/03/2025
 
