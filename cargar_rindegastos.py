@@ -15,6 +15,7 @@ import os
 from sunatinfo_target_columns import sunatinfo_target_columns
 from dotenv import load_dotenv
 from dateutil.relativedelta import relativedelta
+from params import MONTHS_OFFSET, DAYS_OFFSET, YEARS_OFFSET
 
 load_dotenv()
 
@@ -26,15 +27,10 @@ username = os.getenv('DB_USERNAME')
 password = os.getenv('DB_PASSWORD')
 
 today = datetime.datetime.now().strftime("%Y-%m-%d")
-
-months_offset = 12
-days_offset = 0
-years_offset = 0
-
 reference_date = (datetime.datetime.now() -relativedelta(
-    months=months_offset, 
-    days=days_offset, 
-    years=years_offset
+    months=MONTHS_OFFSET,
+    days=DAYS_OFFSET,
+    years=YEARS_OFFSET
 )).strftime("%Y-%m-%d")
 
 # Function to establish the database connection
