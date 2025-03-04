@@ -6,12 +6,12 @@ Este repositorio contiene scripts desarrollados en `python` para la integración
 
 ### 1. `cargar_rindegastos.py`
 
-Este script extrae y procesa datos de Rindegastos (gastos, usuarios, informes, políticas) mediante la API de Rindegastos y almacena esta información en las tablas correspondientes de la base de datos.
+Este script extrae y procesa datos de Rindegastos (gastos, usuarios, informes, políticas) mediante la API de Rindegastos y almacena esta información en las tablas correspondientes.
 
 - **Funciones principales:**
   - `fetch_and_store_data`: Extrae y almacena los datos de gastos, usuarios, informes y políticas y los guarda en las tablas correspondientes. 
 
-    Para el caso de los gastos e informes se entrega un parámetro adicional `status` que permite filtrar los gastos según su estado. Los valores posibles son:  
+    Para el caso de los gastos e informes se entrega un parámetro adicional `status` que permite filtrarlos según su estado. Los valores posibles son:  
     - 1: Aprobado
     - 2: Rechazado
     - 0: En proceso<br>  
@@ -31,7 +31,7 @@ Este script valida facturas y recibos contra la API de la SUNAT para verificar l
 
 ### 3. `actualizar_informe_y_gastos_rindegastos.py`
 
-Este script se ejecuta a partir del clic de un botón de `Titán` en la vista [**Financieros > Rendiciones > Informes rendiciones detalle**](http://titan.sayf.cl/tesoreria/reporte-rinde-gastos-detalle/index) para actualizar un informe específico y sus gastos relacionados desde la `API de Rindegastos`.
+Este script se ejecuta a partir del clic de un botón de `Titán` en la vista [**Financieros > Rendiciones > Informes rendiciones detalle**](http://titan.sayf.cl/tesoreria/reporte-rinde-gastos-detalle/index) para actualizar un informe específico y sus gastos relacionados a partir de los datos obtenidos en tiempo real de la `API de Rindegastos`.
 
 - **Flujo:**
 
@@ -98,13 +98,11 @@ Sustituye `<report_number>` por el número del informe a actualizar.
 ## 📝 Notas adicionales
 
 - Si realizas cambios en el código, no olvides ejecutar el comand `git pull` en el servidor `new-highlife` para actualizar los cambios en producción.
-
 - La ruta del proyecto en el servidor `new-highlife` es `C:\Compartido\Carga\Reportes\Ciclo_Proveedores\rindegastos`. 
-
-
 - Los scripts `cargar_rindegastos.py` y `cargar_gastos_vcp.py` se ejecutan diariamente a las 7:00 am en el servior `new-highlife` mediante la tarea la tarea **`Task Scheduler Library>Reportes>cargar_rindegastos`** que ejecuta el archivo bat `cargar_rindegastos.bat`. 
- 
+- El script `cargar_rindegastos.py` puede ser ejecutado manualmente desde `Titán` en la vista [**Actualizaciones > Ejecutar bat**](http://titan.sayf.cl/utils/ejecutar-bat)
 
+ 
 ###### Última modificación del README: 04/03/2025
 
 ---
