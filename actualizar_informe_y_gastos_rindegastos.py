@@ -102,7 +102,7 @@ def fetch_and_store_df(df, target_table, schema_name='fil', connection_string=''
     
     df.drop_duplicates(inplace=True)
     
-    df['fecha_carga'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")     
+    df['fecha_carga'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     df.to_sql(target_table, engine, schema=schema_name, if_exists='append', index=False)
     

@@ -172,7 +172,7 @@ def fetch_and_store_sunatinfo_data(sunatinfo_df, target_table, status="1"):
     df = df.reindex(columns=target_columns, fill_value=np.nan)
 
     df = df[target_columns]
-    df['fecha_carga'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")
+    df['fecha_carga'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     df.to_sql(target_table, engine, schema=schema_name, if_exists='append', index=False)
 
@@ -207,7 +207,7 @@ def fetch_and_store_extrafields_data(extrafields_df, target_table, status="1"):
     # Apply transformation to each element in the DataFrame
     df = df.map(transform_to_string)
     df.drop_duplicates(inplace=True)
-    df['fecha_carga'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")
+    df['fecha_carga'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     df.to_sql(target_table, engine, schema=schema_name, if_exists='append', index=False)
 
@@ -294,15 +294,18 @@ def fetch_and_store_data(endpoint, target_table, data_key, status="1"):
             # Apply transformation to each element in the DataFrame
             df = df.map(transform_to_string)
             df.drop_duplicates(inplace=True)
-            df['fecha_carga'] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")
+            df['fecha_carga'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         
             if status == "1":
                 df.to_sql(target_table, engine, schema=schema_name, if_exists='append', index=False)
             else:
                 if target_table == "rindegastos_gastos":
-                    df = df[df['IssueDate'].str[:4].astype(int) >= 2024]
+                    if 'IssueDate' in df.columns:
+                        df = df[df['IssueDate'].str[:4].astype(int) >= int(reference_date[:4])]
                 else:
-                    df = df[df['SendDate'].str[:4].astype(int) >= 2024]
+                    if 'SendDate' in df.columns:
+                        df = df[df['SendDate'].str[:4].astype(int) >= int(reference_date[:4])]
                 df.to_sql(target_table, engine, schema=schema_name, if_exists='append', index=False)
                 
             # Log success
@@ -384,7 +387,9 @@ def drop_any_duplacates():
         'fil.rindegastos_gastos_extrafields',
         'fil.rindegastos_gastos_sunatinfo',
         'fil.rindegastos_informes',
-        'fil.rindegastos_informes_extrafields'
+        'fil.rindegastos_informes_extrafields',
+        'fil.rindegastos_politicas',
+        'fil.rindegastos_usuarios'
     ]
 
     try:
