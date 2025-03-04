@@ -12,12 +12,48 @@ from params import YEARS_OFFSET, MONTHS_OFFSET, DAYS_OFFSET
 import os
 from cargar_rindegastos import log_exceptions
 
+load_dotenv()
+
 # Database connection details
 server = os.getenv('DB_SERVER')
 database = os.getenv('DB_DATABASE')
 schema_name = os.getenv('DB_SCHEMA')
 username = os.getenv('DB_USERNAME')
 password = os.getenv('DB_PASSWORD')
+
+# These dictionaries are for mapping and sending the encoded information to the API and for decoding it afterward.
+# For encoding
+codComp_encode = {
+    "FAC": "01",  # Invoice
+    "BOL": "03"   # Sales receipt
+}
+
+# For decoding
+estadoCp_decode = {
+    "0": "NO EXISTE",      # (Non-existent receipt),
+    "1": "ACEPTADO",       # (Accepted receipt),
+    "2": "ANULADO",        # (Canceled receipt),
+    "3": "AUTORIZADO",     # (Authorized receipt),
+    "4": "NO AUTORIZADO"   # (Not authorized by the print shop)
+}
+
+estadoRuc_decode = {
+    "00": "ACTIVO",                    # Active
+    "01": "BAJA PROVISIONAL",         # Provisional suspension
+    "02": "BAJA PROV. POR OFICIO",    # Provisional suspension by office
+    "03": "SUSPENSION TEMPORAL",      # Temporary suspension
+    "10": "BAJA DEFINITIVA",          # Definitive suspension
+    "11": "BAJA DE OFICIO",           # Suspension by office
+    "22": "INHABILITADO-VENT.UNICA"   # Unilaterally disabled
+}
+
+condDomiRuc_decode = {
+    "00": "HABIDO",           # Registered
+    "09": "PENDIENTE",        # Pending
+    "11": "POR VERIFICAR",    # To be verified
+    "12": "NO HABIDO",        # Not registered
+    "20": "NO HALLADO"        # Not found
+}
 
 # Function to consult the status
 def consultar_estado(rowId, numRuc, codComp, numeroSerie, numero, fechaEmision, monto):
@@ -126,10 +162,7 @@ def drop_any_duplacates():
 @log_exceptions
 def main():
     global token
-    global codComp_encode, estadoCp_decode, estadoRuc_decode, condDomiRuc_decode
     start_time = time.time()
-
-    load_dotenv()
 
     # Replace these values with your actual client_id and client_secret
     client_id = os.getenv('CLIENT_ID')
@@ -158,39 +191,6 @@ def main():
         # Error occurred
         print("Error:", response.text)
 
-    # These dictionaries are for mapping and sending the encoded information to the API and for decoding it afterward.
-    # For encoding
-    codComp_encode = {
-        "FAC": "01",  # Invoice
-        "BOL": "03"   # Sales receipt
-    }
-
-    # For decoding
-    estadoCp_decode = {
-        "0": "NO EXISTE",      # (Non-existent receipt),
-        "1": "ACEPTADO",       # (Accepted receipt),
-        "2": "ANULADO",        # (Canceled receipt),
-        "3": "AUTORIZADO",     # (Authorized receipt),
-        "4": "NO AUTORIZADO"   # (Not authorized by the print shop)
-    }
-
-    estadoRuc_decode = {
-        "00": "ACTIVO",                    # Active
-        "01": "BAJA PROVISIONAL",         # Provisional suspension
-        "02": "BAJA PROV. POR OFICIO",    # Provisional suspension by office
-        "03": "SUSPENSION TEMPORAL",      # Temporary suspension
-        "10": "BAJA DEFINITIVA",          # Definitive suspension
-        "11": "BAJA DE OFICIO",           # Suspension by office
-        "22": "INHABILITADO-VENT.UNICA"   # Unilaterally disabled
-    }
-
-    condDomiRuc_decode = {
-        "00": "HABIDO",           # Registered
-        "09": "PENDIENTE",        # Pending
-        "11": "POR VERIFICAR",    # To be verified
-        "12": "NO HABIDO",        # Not registered
-        "20": "NO HALLADO"        # Not found
-    }
 
     # Calculate the reference date
     reference_date = (datetime.now() - relativedelta(
