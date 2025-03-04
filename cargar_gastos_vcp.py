@@ -9,84 +9,10 @@ from sqlalchemy import create_engine
 from dotenv import load_dotenv
 from dateutil.relativedelta import relativedelta
 from params import YEARS_OFFSET, MONTHS_OFFSET, DAYS_OFFSET
+import os
+from cargar_rindegastos import log_exceptions
 
-
-start_time = time.time()
-
-load_dotenv()
-
-# Database connection details
-server = os.getenv('DB_SERVER')
-database = os.getenv('DB_DATABASE')
-schema_name = os.getenv('DB_SCHEMA')
-username = os.getenv('DB_USERNAME')
-password = os.getenv('DB_PASSWORD')
-
-# Replace these values with your actual client_id and client_secret
-client_id = os.getenv('CLIENT_ID')
-client_secret = os.getenv('CLIENT_SECRET')
-ruc = os.getenv('RUC')
-
-# URL for token generation
-url = F"https://api-seguridad.sunat.gob.pe/v1/clientesextranet/{client_id}/oauth2/token/"
-
-# Body of the request
-payload = {
-    "grant_type": "client_credentials",
-    "scope": "https://api.sunat.gob.pe/v1/contribuyente/contribuyentes",
-    "client_id": client_id,
-    "client_secret": client_secret
-}
-
-# Making the POST request
-response = requests.post(url, data=payload)
-
-# Checking the response status
-if response.status_code == 200:
-    # Successful request
-    token = response.json().get("access_token")
-else:
-    # Error occurred
-    print("Error:", response.text)
-
-# These dictionaries are for mapping and sending the encoded information to the API and for decoding it afterward. Crea
-# Created based on information from pages 10 and 11 of the the Sunat documentation found in:
-# https://cpe.sunat.gob.pe/sites/default/files/inline-files/Manual-de-Consulta-Integrada-de-Comprobante-de-Pago-por-ServicioWEB_v2.pdf
-
-# For encoding
-codComp_encode = {
-    "FAC": "01",  # Invoice
-    "BOL": "03"  # Sales receipt
-}
-
-# For decoding
-estadoCp_decode = {
-    "0": "NO EXISTE",      # (Non-existent receipt),
-    "1": "ACEPTADO",       # (Accepted receipt),
-    "2": "ANULADO",        # (Canceled receipt),
-    "3": "AUTORIZADO",     # (Authorized receipt),
-    "4": "NO AUTORIZADO"   # (Not authorized by the print shop)
-}
-
-estadoRuc_decode = {
-    "00": "ACTIVO",                    # Active
-    "01": "BAJA PROVISIONAL",         # Provisional suspension
-    "02": "BAJA PROV. POR OFICIO",    # Provisional suspension by office
-    "03": "SUSPENSION TEMPORAL",      # Temporary suspension
-    "10": "BAJA DEFINITIVA",          # Definitive suspension
-    "11": "BAJA DE OFICIO",           # Suspension by office
-    "22": "INHABILITADO-VENT.UNICA"   # Unilaterally disabled
-}
-
-condDomiRuc_decode = {
-    "00": "HABIDO",           # Registered
-    "09": "PENDIENTE",        # Pending
-    "11": "POR VERIFICAR",    # To be verified
-    "12": "NO HABIDO",        # Not registered
-    "20": "NO HALLADO"        # Not found
-}
-
-
+# Function to consult the status
 def consultar_estado(rowId, numRuc, codComp, numeroSerie, numero, fechaEmision, monto):
     # URL for integrated consultation service
     url = f"https://api.sunat.gob.pe/v1/contribuyente/contribuyentes/{numRuc}/validarcomprobante"
@@ -110,7 +36,7 @@ def consultar_estado(rowId, numRuc, codComp, numeroSerie, numero, fechaEmision, 
     max_retries = 3
     retries = 0
 
-    while retries<max_retries:
+    while retries < max_retries:
         print("--------------------------------------------------------------------------------------")
         print(f"Processing rowId={rowId}, numRuc={numRuc}, codComp={codComp}, numeroSerie={numeroSerie}, numero={numero}, fechaEmision={fechaEmision}, monto={monto}")
         response = requests.post(url, headers=headers, data=json.dumps(payload))
@@ -149,107 +75,7 @@ def consultar_estado(rowId, numRuc, codComp, numeroSerie, numero, fechaEmision, 
         time.sleep(1)
         retries += 1        
 
-reference_date = (datetime.datetime.now() -relativedelta(
-    years=YEARS_OFFSET,
-    months=MONTHS_OFFSET,
-    days=DAYS_OFFSET,
-)).strftime("%Y-%m-%d")
-
-# Establish the database connection
-cnxn = pyodbc.connect(
-    'DRIVER={SQL Server};SERVER=' + server + 
-    ';DATABASE=' + database + 
-    ';UID={' + username + '}' +
-    ';PWD={' + password + '}'
-)
-
-# Define the SQL query to get checked_ids
-checked_ids_query = """
-SELECT Id FROM CICLO_PROVEEDORES.fil.rindegastos_gastos_vcp;
-"""
-
-# Load checked_ids into a pandas DataFrame
-checked_ids_df = pd.read_sql_query(checked_ids_query, cnxn)
-
-# Extract the 'Id' column as a list or set
-checked_ids = set(checked_ids_df['Id'])
-
-# Define the main SQL query to load data into df
-main_query = f"""
-SELECT
-    a.Id,
-    RUC_Proveedor_Value,
-    Tipo_Documento_Code,
-    Serie_Value,
-    Correlativo_Value,
-    IssueDate,
-    OriginalAmount
-FROM
-    CICLO_PROVEEDORES.fil.rindegastos_gastos a
-LEFT JOIN
-    CICLO_PROVEEDORES.fil.rindegastos_gastos_extrafields b
-ON
-    a.id = b.Id
-WHERE
-    a.IssueDate >= '{reference_date}';
-"""
-
-# Load data into a pandas DataFrame
-df = pd.read_sql_query(main_query, cnxn)
-
-# Drop rows with any NaN values
-df.dropna(how='any', inplace=True)
-
-# Apply transformation
-df['Serie_Value'] = df['Serie_Value'].apply(lambda x: x.split('-')[0])
-
-# Filter rows where Tipo_Documento_Code is either 'FAC' or 'BOL'
-df = df[df['Tipo_Documento_Code'].isin(['FAC', 'BOL'])]
-
-# Drop rows from df where 'Id' is in checked_ids
-df = df[~df['Id'].isin(checked_ids)]
-
-# Apply consultar_estado function and create a new DataFrame
-rinde_gastos_vcp = []
-for index, row in df.iterrows():
-
-    # If any value of the row is None return
-
-    # Values to be passed to consultar_estado
-    row_id = row['Id']
-    num_ruc = row["RUC_Proveedor_Value"]
-    cod_comp = row["Tipo_Documento_Code"]
-    numero_serie = row["Serie_Value"]
-    numero = row["Correlativo_Value"]
-    fecha_emision  = datetime.strptime(row["IssueDate"], "%Y-%m-%d").strftime("%d/%m/%Y")
-    monto = row["OriginalAmount"]
-    
-    result = consultar_estado(row_id,
-                              num_ruc, 
-                              cod_comp, 
-                              numero_serie, 
-                              numero, 
-                              fecha_emision, 
-                              monto)
-    if result:
-        rinde_gastos_vcp.append({"Id": row["Id"], 
-                         "Fecha_Consulta": datetime.now(), 
-                         "Estado_Comprobante": result[0], 
-                         "Estado_Contribuyente": result[1], 
-                         "Condicion_Domiciliaria": result[2]
-                        })
-
-rinde_gastos_vcp_df = pd.DataFrame(rinde_gastos_vcp)
-connection_string = f"mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+17+for+SQL+Server"
-engine = create_engine(connection_string)
-target_table = 'rindegastos_gastos_vcp'
-
-if not rinde_gastos_vcp_df.empty:
-    rinde_gastos_vcp_df.to_sql(target_table, engine, schema=schema_name, if_exists='append', index=False)
-else:
-    print("DataFrame is empty; table not replaced.")
-
-# Función para establecer la conexión a la base de datos
+# Function to establish the database connection
 def get_database_connection():
     conn_str = (
         'DRIVER={SQL Server};SERVER=' + server +
@@ -260,8 +86,9 @@ def get_database_connection():
     
     return pyodbc.connect(conn_str)
 
+# Function to drop any duplicates from the target table
 def drop_any_duplacates():
-     # Drop any dupliactes 
+    # Drop any duplicates 
     conn = get_database_connection()
     cursor = conn.cursor()
     try:
@@ -286,25 +113,201 @@ def drop_any_duplacates():
     except Exception as e:
         print(f"Error: {str(e)}")
         conn.rollback()
-
     finally:
         conn.close()
 
-drop_any_duplacates()
+@log_exceptions
+def main():
+    global token
+    global codComp_encode, estadoCp_decode, estadoRuc_decode, condDomiRuc_decode
+    start_time = time.time()
 
-# Add EXEC statement at the end
-try:
-    conn = get_database_connection()
-    cursor = conn.cursor()
-    cursor.execute(f"EXEC fil.sp_actualiza_reporte_rindegastos")  # Replace with your actual stored procedure
-    conn.commit()
-except Exception as e:
-    print(f"Error executing stored procedure: {e}")
-    conn.rollback()
-finally:
-    cursor.close()
-    conn.close()
+    load_dotenv()
 
-end_time = time.time()
-execution_time = end_time - start_time
-print(f"Execution time: {execution_time} seconds")
+    # Database connection details
+    server = os.getenv('DB_SERVER')
+    database = os.getenv('DB_DATABASE')
+    schema_name = os.getenv('DB_SCHEMA')
+    username = os.getenv('DB_USERNAME')
+    password = os.getenv('DB_PASSWORD')
+
+    # Replace these values with your actual client_id and client_secret
+    client_id = os.getenv('CLIENT_ID')
+    client_secret = os.getenv('CLIENT_SECRET')
+    ruc = os.getenv('RUC')
+
+    # URL for token generation
+    url = f"https://api-seguridad.sunat.gob.pe/v1/clientesextranet/{client_id}/oauth2/token/"
+
+    # Body of the request
+    payload = {
+        "grant_type": "client_credentials",
+        "scope": "https://api.sunat.gob.pe/v1/contribuyente/contribuyentes",
+        "client_id": client_id,
+        "client_secret": client_secret
+    }
+
+    # Making the POST request
+    response = requests.post(url, data=payload)
+
+    # Checking the response status
+    if response.status_code == 200:
+        # Successful request
+        token = response.json().get("access_token")
+    else:
+        # Error occurred
+        print("Error:", response.text)
+
+    # These dictionaries are for mapping and sending the encoded information to the API and for decoding it afterward.
+    # For encoding
+    codComp_encode = {
+        "FAC": "01",  # Invoice
+        "BOL": "03"   # Sales receipt
+    }
+
+    # For decoding
+    estadoCp_decode = {
+        "0": "NO EXISTE",      # (Non-existent receipt),
+        "1": "ACEPTADO",       # (Accepted receipt),
+        "2": "ANULADO",        # (Canceled receipt),
+        "3": "AUTORIZADO",     # (Authorized receipt),
+        "4": "NO AUTORIZADO"   # (Not authorized by the print shop)
+    }
+
+    estadoRuc_decode = {
+        "00": "ACTIVO",                    # Active
+        "01": "BAJA PROVISIONAL",         # Provisional suspension
+        "02": "BAJA PROV. POR OFICIO",    # Provisional suspension by office
+        "03": "SUSPENSION TEMPORAL",      # Temporary suspension
+        "10": "BAJA DEFINITIVA",          # Definitive suspension
+        "11": "BAJA DE OFICIO",           # Suspension by office
+        "22": "INHABILITADO-VENT.UNICA"   # Unilaterally disabled
+    }
+
+    condDomiRuc_decode = {
+        "00": "HABIDO",           # Registered
+        "09": "PENDIENTE",        # Pending
+        "11": "POR VERIFICAR",    # To be verified
+        "12": "NO HABIDO",        # Not registered
+        "20": "NO HALLADO"        # Not found
+    }
+
+    # Calculate the reference date
+    reference_date = (datetime.now() - relativedelta(
+        years=YEARS_OFFSET,
+        months=MONTHS_OFFSET,
+        days=DAYS_OFFSET,
+    )).strftime("%Y-%m-%d")
+
+    # Establish the database connection
+    cnxn = pyodbc.connect(
+        'DRIVER={SQL Server};SERVER=' + server + 
+        ';DATABASE=' + database + 
+        ';UID={' + username + '}' +
+        ';PWD={' + password + '}'
+    )
+
+    # Define the SQL query to get checked_ids
+    checked_ids_query = """
+    SELECT Id FROM CICLO_PROVEEDORES.fil.rindegastos_gastos_vcp;
+    """
+
+    # Load checked_ids into a pandas DataFrame
+    checked_ids_df = pd.read_sql_query(checked_ids_query, cnxn)
+
+    # Extract the 'Id' column as a list or set
+    checked_ids = set(checked_ids_df['Id'])
+
+    # Define the main SQL query to load data into df
+    main_query = f"""
+    SELECT
+        a.Id,
+        RUC_Proveedor_Value,
+        Tipo_Documento_Code,
+        Serie_Value,
+        Correlativo_Value,
+        IssueDate,
+        OriginalAmount
+    FROM
+        CICLO_PROVEEDORES.fil.rindegastos_gastos a
+    LEFT JOIN
+        CICLO_PROVEEDORES.fil.rindegastos_gastos_extrafields b
+    ON
+        a.id = b.Id
+    WHERE
+        a.IssueDate >= '{reference_date}';
+    """
+
+    # Load data into a pandas DataFrame
+    df = pd.read_sql_query(main_query, cnxn)
+
+    # Drop rows with any NaN values
+    df.dropna(how='any', inplace=True)
+
+    # Apply transformation
+    df['Serie_Value'] = df['Serie_Value'].apply(lambda x: x.split('-')[0])
+
+    # Filter rows where Tipo_Documento_Code is either 'FAC' or 'BOL'
+    df = df[df['Tipo_Documento_Code'].isin(['FAC', 'BOL'])]
+
+    # Drop rows from df where 'Id' is in checked_ids
+    df = df[~df['Id'].isin(checked_ids)]
+
+    # Apply consultar_estado function and create a new DataFrame
+    rinde_gastos_vcp = []
+    for index, row in df.iterrows():
+        # Values to be passed to consultar_estado
+        row_id = row['Id']
+        num_ruc = row["RUC_Proveedor_Value"]
+        cod_comp = row["Tipo_Documento_Code"]
+        numero_serie = row["Serie_Value"]
+        numero = row["Correlativo_Value"]
+        fecha_emision  = datetime.strptime(row["IssueDate"], "%Y-%m-%d").strftime("%d/%m/%Y")
+        monto = row["OriginalAmount"]
+
+        result = consultar_estado(row_id,
+                                  num_ruc, 
+                                  cod_comp, 
+                                  numero_serie, 
+                                  numero, 
+                                  fecha_emision, 
+                                  monto)
+        if result:
+            rinde_gastos_vcp.append({"Id": row["Id"], 
+                                     "Fecha_Consulta": datetime.now(), 
+                                     "Estado_Comprobante": result[0], 
+                                     "Estado_Contribuyente": result[1], 
+                                     "Condicion_Domiciliaria": result[2]
+                                    })
+
+    rinde_gastos_vcp_df = pd.DataFrame(rinde_gastos_vcp)
+    connection_string = f"mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+17+for+SQL+Server"
+    engine = create_engine(connection_string)
+    target_table = 'rindegastos_gastos_vcp'
+
+    if not rinde_gastos_vcp_df.empty:
+        rinde_gastos_vcp_df.to_sql(target_table, engine, schema=schema_name, if_exists='append', index=False)
+    else:
+        print("DataFrame is empty; table not replaced.")
+
+    drop_any_duplacates()
+
+    # Add EXEC statement at the end
+    try:
+        conn = get_database_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"EXEC fil.sp_actualiza_reporte_rindegastos")  # Replace with your actual stored procedure
+        conn.commit()
+    except Exception as e:
+        print(f"Error executing stored procedure: {e}")
+        conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time} seconds")
+
+if __name__ == '__main__':
+    main()
