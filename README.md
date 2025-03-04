@@ -14,10 +14,8 @@ Este script extrae y procesa datos de Rindegastos (gastos, usuarios, informes, p
     Para el caso de los gastos e informes se entrega un parámetro adicional `status` que permite filtrar los gastos según su estado. Los valores posibles son:  
     - 1: Aprobado
     - 2: Rechazado
-    - 0: En proceso   
-    <br>
+    - 0: En proceso<br>  
     >  Para más información consultar la [documentación oficial de la API Rindegastos](https://rindegastos.com/documentaci%C3%B3n-api).  
-    <br>
 
   - `fetch_and_store_extrafields_data`: Extrae y almacena los campos adicionales de los gastos encontrados en la columna `extraFields`.
   - `fetch_and_store_sunatinfo_data`: Extrae y almacena la información de SUNAT asociada a los gastos encontrados en la columna `sunatInfo`.
