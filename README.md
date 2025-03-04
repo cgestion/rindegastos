@@ -2,7 +2,7 @@
 
 Este repositorio contiene scripts desarrollados en `python` para la integración de la `API de Rindegastos` con la base de datos `CICLO_PROVEEDORES` y esquema `fil`. A continuación, se describen los tres scripts principales.
 
-## Scripts
+## 📝 Scripts
 
 ### 1. `cargar_rindegastos.py`
 
@@ -26,11 +26,12 @@ Este script valida facturas y recibos contra la API de la SUNAT para verificar l
 
 - **Flujo:**
   1. Consulta la API de SUNAT para validar facturas y recibos.
+        > Para más información sobre la API de la SUNAT, consultar la [documentación oficial](https://cpe.sunat.gob.pe/sites/default/files/inline-files/Manual-de-Consulta-Integrada-de-Comprobante-de-Pago-por-ServicioWEB_v2_0.pdf).
   2. Actualiza la base de datos con la información validada en la tabla `rindegastos_gastos_vcp`.
 
 ### 3. `actualizar_informe_y_gastos_rindegastos.py`
 
-Este script se ejecuta desde Titán en la vista [`Financieros > Rendiciones > Informes rendiciones detalle`](http://titan.sayf.cl/tesoreria/reporte-rinde-gastos-detalle/index) para actualizar un informe en específico y sus gastos relacionados desde la `API de Rindegastos`.
+Este script se ejecuta a partir del clic de un botón de `Titán` en la vista [**Financieros > Rendiciones > Informes rendiciones detalle**](http://titan.sayf.cl/tesoreria/reporte-rinde-gastos-detalle/index) para actualizar un informe específico y sus gastos relacionados desde la `API de Rindegastos`.
 
 - **Flujo:**
 
@@ -47,7 +48,7 @@ Este script se ejecuta desde Titán en la vista [`Financieros > Rendiciones > In
   6. Actualiza el estado del informe y sus gastos en la tabla `reporte_rindegastos_detalle`, que es la que se visualiza en `Titán`.
 
 
-## Ejecutar los scripts 
+## 🛠️ Ejecutar los scripts 
 ### 1️⃣ Clonar el repositorio
 Para copiar este proyecto en tu local, abre una terminal en donde desees copiar el repo y ejecuta:
 
