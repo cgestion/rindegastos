@@ -19,7 +19,6 @@ database = os.getenv('DB_DATABASE')
 username = os.getenv('DB_USERNAME')
 password = os.getenv('DB_PASSWORD')
 token = os.getenv('API_TOKEN')
-current_year = datetime.datetime.now().year
 
 # Función para establecer la conexión a la base de datos
 def get_database_connection():
