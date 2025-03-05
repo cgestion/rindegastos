@@ -27,7 +27,7 @@ username = os.getenv('DB_USERNAME')
 password = os.getenv('DB_PASSWORD')
 
 today = datetime.datetime.now().strftime("%Y-%m-%d")
-reference_date = (datetime.datetime.now() -relativedelta(
+reference_date = (datetime.datetime.now() - relativedelta(
     years=YEARS_OFFSET,
     months=MONTHS_OFFSET,
     days=DAYS_OFFSET,
@@ -237,7 +237,7 @@ def fetch_and_store_data(endpoint, target_table, data_key, status="1"):
                 params["Since"] = f"{reference_date}"
                 params["Until"] = f"{today}"
                 params["Status"] = status
-                # params["IntegrationStatus"] = 0
+                params["IntegrationStatus"] = 0
                 
             params["ResultsPerPage"] = "1000"
             
