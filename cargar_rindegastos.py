@@ -238,7 +238,7 @@ def fetch_and_store_data(endpoint, target_table, data_key, status="1"):
                 params["Until"] = f"{today}"
                 params["Status"] = status
                 
-            params["ResultsPerPage"] = "999"
+            params["ResultsPerPage"] = "1000"
             
             while True:
                 params["Page"] = str(page)
@@ -419,22 +419,22 @@ def drop_any_duplacates():
 def get_expenses(params, token):
     url = "https://api.rindegastos.com/v1/getExpenses"
     headers = {"Authorization": f"Bearer {token}"}
-    return requests.get(url, params=params, headers=headers, timeout=None)
+    return requests.get(url, params=params, headers=headers)
 
 def get_users(params, token):
     url = "https://api.rindegastos.com/v1/getUsers"
     headers = {"Authorization": f"Bearer {token}"}
-    return requests.get(url, params=params, headers=headers, timeout=None)
+    return requests.get(url, params=params, headers=headers)
 
 def get_expense_reports(params, token):
     url = "https://api.rindegastos.com/v1/getExpenseReports"
     headers = {"Authorization": f"Bearer {token}"}
-    return requests.get(url, params=params, headers=headers, timeout=None)
+    return requests.get(url, params=params, headers=headers)
 
 def get_expense_policies(params, token):
     url = "https://api.rindegastos.com/v1/getExpensePolicies"
     headers = {"Authorization": f"Bearer {token}"}
-    return requests.get(url, params=params, headers=headers, timeout=None)
+    return requests.get(url, params=params, headers=headers)
 
 @log_exceptions
 def main():
