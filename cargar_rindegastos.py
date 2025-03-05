@@ -237,7 +237,7 @@ def fetch_and_store_data(endpoint, target_table, data_key, status="1"):
                 params["Since"] = f"{reference_date}"
                 params["Until"] = f"{today}"
                 params["Status"] = status
-                params["IntegrationStatus"] = 0
+                # params["IntegrationStatus"] = 0
                 
             params["ResultsPerPage"] = "1000"
             
@@ -450,11 +450,11 @@ def main():
     get_expense_reports_endpoint = lambda params: get_expense_reports(params, token)
     get_expense_policies_endpoint = lambda params: get_expense_policies(params, token)
     
-    # Delete current year records first
-    delete_rindegastos_gastos()
-    delete_rindegastos_informes()
+    # # Delete existing records first
+    # delete_rindegastos_gastos()
+    # delete_rindegastos_informes()
     
-    # Fetch and store operations for updating current year data
+    # Fetch and store operations for updating data
     # Fetch and store expenses
     fetch_and_store_data(get_expenses_endpoint, 'rindegastos_gastos', 'Expenses', '1')
     fetch_and_store_data(get_expenses_endpoint, 'rindegastos_gastos', 'Expenses', '0')
