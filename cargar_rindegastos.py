@@ -237,6 +237,7 @@ def fetch_and_store_data(endpoint, target_table, data_key, status="1"):
                 params["Since"] = f"{reference_date}"
                 params["Until"] = f"{today}"
                 params["Status"] = status
+                params["IntegrationStatus"] = 0
                 
             params["ResultsPerPage"] = "1000"
             
