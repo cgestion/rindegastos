@@ -450,9 +450,9 @@ def main():
     get_expense_reports_endpoint = lambda params: get_expense_reports(params, token)
     get_expense_policies_endpoint = lambda params: get_expense_policies(params, token)
     
-    # # Delete existing records first
-    # delete_rindegastos_gastos()
-    # delete_rindegastos_informes()
+    # Delete existing records first
+    delete_rindegastos_gastos()
+    delete_rindegastos_informes()
     
     # Fetch and store operations for updating data
     # Fetch and store expenses
