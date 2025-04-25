@@ -55,7 +55,7 @@ def log_exceptions(func):
             conn = get_database_connection()
             cursor = conn.cursor()
             cursor.execute('INSERT INTO fil.rindegastos_logs (date, log) VALUES (?, ?)', (datetime.datetime.now(), success_message))
-            cursor.execute("EXEC [A_CONF].[titan].[enviar_alerta] ?, ?", ('miguel.saavedra', success_message))
+            # cursor.execute("EXEC [A_CONF].[titan].[enviar_alerta] ?, ?", ('miguel.saavedra', success_message))
             conn.commit()
             conn.close()
             return result
@@ -68,7 +68,7 @@ def log_exceptions(func):
             cursor = conn.cursor()
             cursor.execute('INSERT INTO fil.rindegastos_logs (date, log) VALUES (?, ?)', (datetime.datetime.now(), error_message))
             error_message_short = f"Error in {func.__name__} (called from {file_name}): {e}"
-            cursor.execute("EXEC [A_CONF].[titan].[enviar_alerta] ?, ?", ('miguel.saavedra', error_message_short))
+            # cursor.execute("EXEC [A_CONF].[titan].[enviar_alerta] ?, ?", ('miguel.saavedra', error_message_short))
             conn.commit()
             conn.close()
             if file_name == 'actualizar_informe_y_gastos_rindegastos.py':
